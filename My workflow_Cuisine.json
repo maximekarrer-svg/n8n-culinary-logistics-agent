@@ -1,0 +1,430 @@
+{
+  "name": "My workflow_Cuisine",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                5
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "33ffa7af-eec0-4021-97f3-54fb371f358e",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1gYhZDOo7eqExlRrsPJcQhEpeZoQ3bkMAu2-DTNBrG3I",
+          "mode": "list",
+          "cachedResultName": "Recettes_Cuisine",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gYhZDOo7eqExlRrsPJcQhEpeZoQ3bkMAu2-DTNBrG3I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gYhZDOo7eqExlRrsPJcQhEpeZoQ3bkMAu2-DTNBrG3I/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "cb7d51b8-b362-4e75-ac8d-e51751db440a",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "LvV3WuwfGhRhRa26",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# ROLE\nTu es un Expert Gastronomique spécialisé dans la structuration de données culinaires pour l'automatisation. Ton rôle est d'extraire des informations précises à partir d'un nom de plat.\n\n# OBJECTIF\nPour le nom de recette fourni, génère une fiche technique structurée. Tu dois répondre EXCLUSIVEMENT au format JSON.\n\n# DIRECTIVES DE CONTENU\n1. **Ingrédients :** Liste complète avec quantités précises (système métrique). Formate cela comme une liste à puces textuelle à l'intérieur de la chaîne de caractères.\n2. **Instructions :** Étapes de préparation claires, numérotées et concises.\n3. **Fiabilité :** Si le plat est inconnu, laisse les champs vides (\"\") au lieu d'inventer.\n\n# FORMAT DE SORTIE STRICT (JSON)\nTu dois impérativement répondre sous cette forme, sans aucun texte avant ou après :\n\n{\n  \"ingredients\": \"- 200g de... \\n- 2 cuillères à soupe de...\",\n  \"instructions\": \"1. Préchauffer le four... \\n2. Mélanger les ingrédients...\"\n}\n\n# CONTRAINTE CRITIQUE\nNe salue pas l'utilisateur. Ne donne pas de conseils non sollicités. Produis uniquement l'objet JSON brut.\n\nRecette:{{ $json.Nom_Recette }}\n\nIngredients:{{ $json.ingredients }}\n\nInstructions:{{ $json.Instructions }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "5e5c2a56-5146-49c2-baa2-fd87bcfde755",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        288,
+        208
+      ],
+      "id": "3a6ab7b1-a21a-413b-9de4-b3e5cdf2d7db",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "UAveL452QNeuD2bL",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1gYhZDOo7eqExlRrsPJcQhEpeZoQ3bkMAu2-DTNBrG3I",
+          "mode": "list",
+          "cachedResultName": "Recettes_Cuisine",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gYhZDOo7eqExlRrsPJcQhEpeZoQ3bkMAu2-DTNBrG3I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gYhZDOo7eqExlRrsPJcQhEpeZoQ3bkMAu2-DTNBrG3I/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Nom_Recette": "={{ $('Get row(s) in sheet').item.json.Nom_Recette }}",
+            "ingredients": "={{ JSON.parse($json.output.replace(/```json|```/g, \"\").trim()).ingredients }}",
+            "Instructions": "={{ JSON.parse($json.output.replace(/```json|```/g, \"\").trim()).instructions }}",
+            "row_number": "={{ $('Get row(s) in sheet').item.json.row_number }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Nom_Recette",
+              "displayName": "Nom_Recette",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ingredients",
+              "displayName": "ingredients",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Instructions",
+              "displayName": "Instructions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        704,
+        16
+      ],
+      "id": "f2a885d2-21a6-46b3-8151-971a3ddc3682",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "LvV3WuwfGhRhRa26",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# ROLE\nExpert en logistique culinaire spécialisé dans la structuration de données.\n\n# OBJECTIF\nÀ partir des ingrédients fournis, consolide les doublons, additionne les quantités et normalise les unités.\n\n# FORMAT DE SORTIE STRICT (JSON)\nRéponds EXCLUSIVEMENT avec un tableau d'objets JSON brut.\nINTERDICTION de mettre des balises ```json ou ```.\nINTERDICTION de mettre du texte avant ou après.\nLa réponse doit commencer par [ et finir par ].\n\nChaque objet du tableau doit avoir exactement cette structure :\n{\n  \"article\": \"Nom de l'ingrédient (ex: Beurre)\",\n  \"quantite\": \"Quantité totale (ex: 350g)\"\n}\n\n# EXEMPLE DE RÉPONSE ATTENDUE\n[\n  {\"article\": \"Farine\", \"quantite\": \"1kg\"},\n  {\"article\": \"Oeufs\", \"quantite\": \"6 pièces\"}\n]\n\nIngredients: {{ $json.ingredients }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1120,
+        16
+      ],
+      "id": "b7564dab-81b3-4a5c-a798-0946f9eef2de",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        784,
+        224
+      ],
+      "id": "a822f6c6-f0f5-4d5d-992d-b214932bcd5f",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "UAveL452QNeuD2bL",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "ingredients"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        912,
+        16
+      ],
+      "id": "37efc2d2-28aa-4e35-ac41-3b6eda6fbb3d",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "jsCode": "// On récupère l'entrée directe qui arrive dans le nœud\nconst rawOutput = items[0].json.output; \n\n// Nettoyage des balises JSON si présentes\nconst cleanOutput = rawOutput.replace(/```json|```/g, \"\").trim();\n\n// Transformation en tableau d'objets\nconst parsedData = JSON.parse(cleanOutput);\n\n// Renvoi des données (n8n créera une ligne par objet du tableau)\nreturn parsedData;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1488,
+        16
+      ],
+      "id": "78fd90fb-98e5-46f5-9ccc-45e27249db51",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1gYhZDOo7eqExlRrsPJcQhEpeZoQ3bkMAu2-DTNBrG3I",
+          "mode": "list",
+          "cachedResultName": "Recettes_Cuisine",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gYhZDOo7eqExlRrsPJcQhEpeZoQ3bkMAu2-DTNBrG3I/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1279621160,
+          "mode": "list",
+          "cachedResultName": "Liste_courses",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1gYhZDOo7eqExlRrsPJcQhEpeZoQ3bkMAu2-DTNBrG3I/edit#gid=1279621160"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Achat": "={{ $json.article }}",
+            "Quantité": "={{ $json.quantite }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Achat",
+              "displayName": "Achat",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quantité",
+              "displayName": "Quantité",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1776,
+        16
+      ],
+      "id": "9234c6a1-63af-4400-a667-e73872d046de",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "LvV3WuwfGhRhRa26",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "d3ce9986-2c93-465c-82b8-bccf565472ca",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ec3aaac62592531edc98c6b3c5d83839a472d0465a1effb4f0246c39d2c133c8"
+  },
+  "id": "oIe8SJFjgfuzFWhC",
+  "tags": []
+}
